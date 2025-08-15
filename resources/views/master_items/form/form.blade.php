@@ -1,6 +1,7 @@
-<form method="POST">
+<form method="POST" action="{{ $method == 'edit' ? route('master_items.update', $item->id) : route('master_items.store') }}">
     @csrf
     @if($method == 'edit')
+    @method('PUT')
     <div class="form-group">
         <label>Kode Barang</label>
         <input type="text" class="form-control" name="kode_barang" required readonly value="{{$item->kode ?? ''}}">
@@ -19,7 +20,7 @@
 
     <div class="form-group">
         <label>Laba (dalam persen)</label>
-        <input type="number" class="form-control" name="laba" required  value="{{$item->laba ?? ''}}">
+        <input type="number" class="form-control" name="laba" required  value="{{$item->laba ?? ''}}" min="0" max="100">
     </div>
 
     @php $selected = $item->supplier ?? ''; @endphp
