@@ -50,7 +50,7 @@ class KategoriController extends Controller
             return redirect('categories')->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
-    
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -83,7 +83,7 @@ class KategoriController extends Controller
 
     public function singleView($kode)
     {
-        $data['data'] = Kategori::where('kode', $kode)->first();
+        $data['data'] = Kategori::with('masterItems')->where('kode', $kode)->first();
         return view('categories.single.index', $data);
     }
 
@@ -91,7 +91,13 @@ class KategoriController extends Controller
     {
         try {
             DB::beginTransaction();
-            $item = Kategori::findOrFail($id);
+            $item = Kategori::with('masterItems')->findOrFail($id);
+
+            if ($item->masterItems()->exists()) {
+                DB::rollBack();
+                return redirect('categories')->with('error', 'Kategori tidak dapat dihapus karena masih memiliki relasi ke master items.');
+            }
+
             $item->delete();
             DB::commit();
             return redirect('categories')->with('success', 'Data berhasil dihapus');

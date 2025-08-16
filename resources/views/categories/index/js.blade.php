@@ -11,7 +11,9 @@
     $(document).ready(function() {
         $('#table').DataTable({
             searching: false,
-            order: [[0, 'desc']],
+            order: [
+                [0, 'desc']
+            ],
         });
         getData()
     });
@@ -20,8 +22,8 @@
         getData()
     })
 
-    function getData(){
-        
+    function getData() {
+
         $('#loading-filter').show();
         var dataTableObj = $('#table').DataTable();
         var filter_kode = $('#filter-kode').val()
@@ -29,7 +31,7 @@
         dataTableObj.clear().draw();
 
         $.ajax({
-            url: '{{url("categories/search")}}',
+            url: '{{ url('categories/search') }}',
             dataType: 'json',
             tryCount: 0,
             retryLimit: 3,
@@ -39,13 +41,12 @@
 
                 $.each(data, function(index, item) {
                     array_temp = [];
-                    var kode = item.kode;
+                    array_temp.push(item.kode); 
+                    array_temp.push(item.nama); 
 
-                    var html = `<a href="{{url('categories/view/')}}/` + kode + `" class="btn btn-primary">View</a>`
-
-                    $.each(item, function(obj_name, obj_value) {
-                        array_temp.push(obj_value)
-                    });
+                    var html = `<a href="{{ url('categories/view/') }}/` + item.kode +
+                        `" class="btn btn-primary">View</a>`;
+                    array_temp.push(html); // View
 
                     dataTableObj.row.add(array_temp).draw(true);
                 });
