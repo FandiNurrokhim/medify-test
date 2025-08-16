@@ -45,10 +45,10 @@
                 $.each(data, function(index, item) {
                     array_temp = [];
 
-                    // Kolom Gambar
+                    // Kolom Foto
                     var photoUrl = item.photo ? '{{ asset('storage') }}/' + item.photo : '';
                     var photoHtml = photoUrl ?
-                        `<img src="${photoUrl}" alt="Gambar" style="max-width:60px;max-height:60px;">` :
+                        `<img src="${photoUrl}" alt="Foto" style="max-width:60px;max-height:60px;">` :
                         '-';
                     array_temp.push(photoHtml);
 
