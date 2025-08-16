@@ -44,29 +44,46 @@
 
                 $.each(data, function(index, item) {
                     array_temp = [];
+
+                    // Kolom Gambar
+                    var photoUrl = item.photo ? '{{ asset('storage') }}/' + item.photo : '';
+                    var photoHtml = photoUrl ?
+                        `<img src="${photoUrl}" alt="Gambar" style="max-width:60px;max-height:60px;">` :
+                        '-';
+                    array_temp.push(photoHtml);
+
+                    // Kolom Kode
+                    array_temp.push(item.kode);
+
+                    // Kolom Nama
+                    array_temp.push(item.nama);
+
+                    // Kolom Jenis
+                    array_temp.push(item.jenis);
+
+                    // Kolom Harga Beli
+                    array_temp.push(item.harga_beli);
+
+                    // Kolom Harga Jual
                     var harga_jual = item.harga_beli + item.harga_beli * item.laba / 100;
-                    harga_jual = Math.round(harga_jual)
-                    var kode = item.kode;
+                    harga_jual = Math.round(harga_jual);
+                    array_temp.push(harga_jual);
 
-                    var html = `<a href="{{ url('master-items/view/') }}/` + kode +
-                        `" class="btn btn-primary">View</a>`
+                    // Kolom Supplier
+                    array_temp.push(item.supplier);
 
-                    $.each(item, function(obj_name, obj_value) {
-                        if (obj_name == 'laba') return false;
-                        array_temp.push(obj_value)
-                    })
-                    array_temp.push(harga_jual)
-                    array_temp.push(item.supplier)
-
+                    // Kolom Kategori
                     var categories = Array.isArray(item.categories) ? item.categories.join(', ') :
                         '';
                     array_temp.push(categories);
 
-                    array_temp.push(html)
+                    // Kolom View
+                    var html = `<a href="{{ url('master-items/view/') }}/` + item.kode +
+                        `" class="btn btn-primary">View</a>`;
+                    array_temp.push(html);
 
                     dataTableObj.row.add(array_temp).draw(true);
                 });
-                $('#loading-filter').hide();
             },
             error: function(xhr, textStatus, errorThrown) {
                 this.tryCount++;

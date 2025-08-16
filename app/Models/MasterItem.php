@@ -17,6 +17,7 @@ class MasterItem extends Model
         'jenis',
         'harga_beli',
         'laba',
+        'photo',
         'supplier'
     ];
 

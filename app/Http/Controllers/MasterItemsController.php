@@ -39,13 +39,14 @@ class MasterItemsController extends Controller
         }
 
         $data_search = $query->with('categories')
-            ->select('kode', 'nama', 'jenis', 'harga_beli', 'laba', 'supplier', 'id')
+            ->select('kode', 'nama', 'photo', 'jenis', 'harga_beli', 'laba', 'supplier', 'id')
             ->orderBy('id')
             ->get()
             ->map(function ($item) {
                 return [
                     'kode' => $item->kode,
                     'nama' => $item->nama,
+                    'photo' => $item->photo,
                     'jenis' => $item->jenis,
                     'harga_beli' => $item->harga_beli,
                     'laba' => $item->laba,
@@ -70,20 +71,29 @@ class MasterItemsController extends Controller
             'jenis' => 'required|string|max:255',
             'category' => 'required|array',
             'category.*' => 'exists:kategori,id',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
         try {
             DB::beginTransaction();
             $item = MasterItem::create($validated);
-            $item->categories()->attach($request->category);
 
+            if ($request->hasFile('photo')) {
+                $photoPath = $this->uploadFile('master_items', $request->file('photo'), $request->nama);
+                $item->photo = $photoPath;
+                $item->save();
+            }
+    
+            $item->categories()->attach($request->category);
             DB::commit();
             return redirect('master-items')->with('success', 'Data berhasil disimpan');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect('master-items')->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
-
+    
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -94,13 +104,26 @@ class MasterItemsController extends Controller
             'jenis' => 'required|string|max:255',
             'category' => 'required|array',
             'category.*' => 'exists:kategori,id',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
         try {
             DB::beginTransaction();
             $data_item = MasterItem::findOrFail($id);
             $data_item->update($validated);
+    
+            if ($request->hasFile('photo')) {
+                $photoPath = $this->updateFile(
+                    'master_items',
+                    $request->file('photo'),
+                    $data_item->photo,
+                    $request->nama
+                );
+                $data_item->photo = $photoPath;
+                $data_item->save();
+            }
+    
             $data_item->categories()->sync($request->category);
-
+    
             DB::commit();
             return redirect('master-items')->with('success', 'Data berhasil diupdate');
         } catch (\Exception $e) {
