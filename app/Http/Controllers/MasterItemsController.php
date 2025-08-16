@@ -120,7 +120,10 @@ class MasterItemsController extends Controller
         try {
             DB::beginTransaction();
             $data = MasterItem::get();
+            $updatedItems = [];
+
             foreach ($data as $item) {
+                $prevKode = $item->kode;
                 $kode = str_pad($item->id, 5, '0', STR_PAD_LEFT);
                 $item->harga_beli = rand(100, 1000000);
                 $item->laba = rand(0, 100);
@@ -128,9 +131,19 @@ class MasterItemsController extends Controller
                 $item->supplier = $this->getRandomSupplier();
                 $item->jenis = $this->getRandomJenis();
                 $item->save();
+                $updatedItems[] = [
+                    'id' => $item->id,
+                    'prev_kode' => $prevKode,
+                    'new_kode' => $kode
+                ];
             }
             DB::commit();
-            return redirect('master-items')->with('success', 'Data random berhasil diupdate');
+            
+            $message = 'Data random berhasil diupdate. ';
+            foreach ($updatedItems as $upd) {
+                $message .= "ID {$upd['id']}: kode {$upd['prev_kode']} -> {$upd['new_kode']}. ";
+            }
+            return redirect('master-items')->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect('master-items')->with('error', 'Gagal update random data: ' . $e->getMessage());
