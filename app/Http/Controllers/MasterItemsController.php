@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
 use App\Models\MasterItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -31,9 +32,27 @@ class MasterItemsController extends Controller
             $query->where('harga_beli', '<=', $request->hargamax);
         }
 
-        $data_search = $query->select('kode', 'nama', 'jenis', 'harga_beli', 'laba', 'supplier')
+        if ($request->filled('kategori_nama')) {
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->where('nama', 'LIKE', '%' . $request->kategori_nama . '%');
+            });
+        }
+
+        $data_search = $query->with('categories')
+            ->select('kode', 'nama', 'jenis', 'harga_beli', 'laba', 'supplier', 'id')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'kode' => $item->kode,
+                    'nama' => $item->nama,
+                    'jenis' => $item->jenis,
+                    'harga_beli' => $item->harga_beli,
+                    'laba' => $item->laba,
+                    'supplier' => $item->supplier,
+                    'categories' => $item->categories->pluck('nama')->toArray(),
+                ];
+            });
 
         return response()->json([
             'status' => 200,
@@ -49,10 +68,13 @@ class MasterItemsController extends Controller
             'laba' => 'required|numeric|min:0|max:100',
             'supplier' => 'required|string|max:255',
             'jenis' => 'required|string|max:255',
+            'category' => 'required|array',
+            'category.*' => 'exists:kategori,id',
         ]);
         try {
             DB::beginTransaction();
-            MasterItem::create($validated);
+            $item = MasterItem::create($validated);
+            $item->categories()->attach($request->category);
 
             DB::commit();
             return redirect('master-items')->with('success', 'Data berhasil disimpan');
@@ -61,6 +83,7 @@ class MasterItemsController extends Controller
             return redirect('master-items')->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -69,11 +92,14 @@ class MasterItemsController extends Controller
             'laba' => 'required|numeric|min:0|max:100',
             'supplier' => 'required|string|max:255',
             'jenis' => 'required|string|max:255',
+            'category' => 'required|array',
+            'category.*' => 'exists:kategori,id',
         ]);
         try {
             DB::beginTransaction();
             $data_item = MasterItem::findOrFail($id);
             $data_item->update($validated);
+            $data_item->categories()->sync($request->category);
 
             DB::commit();
             return redirect('master-items')->with('success', 'Data berhasil diupdate');
@@ -90,8 +116,10 @@ class MasterItemsController extends Controller
         } else {
             $item = MasterItem::find($id);
         }
+        $categories = Kategori::get();
         $data['item'] = $item;
         $data['method'] = $method;
+        $data['categories'] = $categories;
         return view('master_items.form.index', $data);
     }
 
@@ -106,6 +134,7 @@ class MasterItemsController extends Controller
         try {
             DB::beginTransaction();
             $item = MasterItem::findOrFail($id);
+            $item->categories()->detach();
             $item->delete();
             DB::commit();
             return redirect('master-items')->with('success', 'Data berhasil dihapus');
@@ -138,7 +167,7 @@ class MasterItemsController extends Controller
                 ];
             }
             DB::commit();
-            
+
             $message = 'Data random berhasil diupdate. ';
             foreach ($updatedItems as $upd) {
                 $message .= "ID {$upd['id']}: kode {$upd['prev_kode']} -> {$upd['new_kode']}. ";

@@ -24,8 +24,15 @@ class MasterItem extends Model
     {
         static::creating(function ($item) {
             $lastId = MasterItem::withTrashed()->max('id') ?? 0;
-            $kode = 'PRD' . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT); 
+            $kode = 'PRD' . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
             $item->kode = $kode;
         });
+    }
+
+
+    public function categories()
+    {
+        return $this->belongsToMany(Kategori::class, 'master_kategori', 'master_item_id', 'kategori_id')
+            ->withTimestamps();
     }
 }
